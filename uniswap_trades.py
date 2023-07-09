@@ -1,4 +1,5 @@
 from datetime import datetime
+import json
 import time
 import requests
 
@@ -48,7 +49,7 @@ if __name__ == "__main__":
             pool_address="0xa43fe16908251ee70ef74718545e4fe6c5ccec9f",
             from_timestamp=now_timestamp - 86400,
             until_timestamp=now_timestamp,
-            limit=10,
+            limit=5,
         )
-        for record in records:
-            print(record)
+        print(json.dumps(records, indent=4))
+        exit()

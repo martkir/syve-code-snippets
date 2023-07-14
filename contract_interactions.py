@@ -1,5 +1,6 @@
 from datetime import datetime
 import json
+import time
 import requests
 
 
@@ -26,7 +27,7 @@ def sql_fetch_num_contract_interactions(contract_addresses, from_timestamp, unti
             SELECT COUNT(*) as count, to_address \
             FROM "eth_transactions" \
             WHERE to_address IN ({contract_addresses_str}) \
-            AND "@timestamp" BETWEEN '{from_timestamp}' AND '{until_timestamp}' \
+            AND "timestamp" BETWEEN '{from_timestamp}' AND '{until_timestamp}' \
             GROUP BY to_address
         """
     }
@@ -36,16 +37,26 @@ def sql_fetch_num_contract_interactions(contract_addresses, from_timestamp, unti
     return records
 
 
-if __name__ == "__main__":
+def test():
     etherscan_labels = load_etherscan_labels()
     token_address = "0xd33526068d116ce69f19a9ee46f0bd304f21a51f"  # Rocket Pool
     protocol_contracts = get_protocol_contracts(token_address, etherscan_labels)
-
+    print("Number of contracts to count interactions for: ", len(protocol_contracts))
+    output_path = "/home/martin/syve-code-snippets/rocket_pool_contract_counts.json"
     until_timestamp = int(datetime.now().timestamp())
     fromt_timestamp = until_timestamp - 365 * 86400
+    fetch_start = time.time()
+    print("Fetching interaction counts between ", fromt_timestamp, " and ", until_timestamp, "...")
     counts = sql_fetch_num_contract_interactions(
         contract_addresses=protocol_contracts,
         from_timestamp=fromt_timestamp,
         until_timestamp=until_timestamp,
     )
-    print(json.dumps(counts, indent=4))
+    print("Finished fetching - Took: ", time.time() - fetch_start)
+    counts = sorted(counts, key=lambda x: -1 * x["count"], reverse=True)
+    json.dump(counts, open(output_path, "w+"), indent=4)
+    print("Saved smart contract counts to: ", output_path)
+
+
+if __name__ == "__main__":
+    test()
